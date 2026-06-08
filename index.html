@@ -277,7 +277,7 @@ const PLAN=[
    {id:"goblet-squat",name:"Goblet Squat",sets:4,reps:"10–12 reps",load:"10 kg plate · 3-sec lower",video:"https://youtu.be/MeIiIdhvXT4"},
    {id:"reverse-lunge",name:"Reverse Lunge",sets:3,reps:"10 / leg",load:"Hold 10 kg at chest",video:"https://youtu.be/RZKXLMxPF_I"},
    {id:"hip-thrust",name:"Glute Bridge",sets:3,reps:"15 reps",load:"10 kg on hips · pause at top",video:"https://youtu.be/wPM8icPu6H8"},
-   {id:"step-up",name:"Step-up (chair/bench)",sets:3,reps:"12 / leg",load:"Hold 10 kg at chest",video:"https://youtu.be/aKj-6hgiViA"},
+   {id:"lateral-lunge",name:"Lateral Lunge",sets:3,reps:"10 / side",load:"Hold 10 kg at chest",video:"https://youtu.be/R8jArZG2J6Q"},
    {id:"wall-sit",name:"Wall Sit",sets:3,reps:"30–45 sec",load:"Hold 10 kg on lap to progress",video:"https://youtu.be/JaZNYM3zAP0"},
    {id:"plank-a",name:"Plank",sets:3,reps:"30–45 sec",load:"Core · brace tight",video:"https://youtu.be/mH5Sfb_KTGg"},
    {id:"dead-bug",name:"Dead Bug",sets:3,reps:"10 / side",load:"Core · slow tempo",video:"https://youtu.be/bxn9FBrt4-A"}
@@ -488,7 +488,7 @@ function effectiveVideo(e){return (state.videos[e.id]||e.video||"").trim();}
 function parseVideo(url){
   url=(url||"").trim();if(!url)return null;
   let m;
-  if((m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/)))return"https://www.youtube-nocookie.com/embed/"+m[1];
+  if((m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)+([\w-]{11})/)))return"https://www.youtube-nocookie.com/embed/"+m[1];
   if((m=url.match(/vimeo\.com\/(?:video\/)?(\d+)/)))return"https://player.vimeo.com/video/"+m[1];
   if(/^[\w-]{11}$/.test(url))return"https://www.youtube-nocookie.com/embed/"+url;
   return null;
