@@ -536,9 +536,8 @@ function effectiveVideo(e){return (state.videos[e.id]||e.video||"").trim();}
 function parseVideo(url){
   url=(url||"").trim();if(!url)return null;
   let m;
-  if((m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/)))return"https://www.youtube-nocookie.com/embed/"+m[1];
+  if((m=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)?([\w-]{11})(?:[?&]|$)/)))return"https://www.youtube-nocookie.com/embed/"+m[1];
   if((m=url.match(/vimeo\.com\/(?:video\/)?(\d+)/)))return"https://player.vimeo.com/video/"+m[1];
-  if(/^[\w-]{11}$/.test(url))return"https://www.youtube-nocookie.com/embed/"+url;
   return null;
 }
 function embedHtml(raw,exId){
