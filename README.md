@@ -4,11 +4,13 @@ A self-contained, single-file workout tracker for a 4-day Upper/Lower home train
 
 ## Features
 
-- 4-day Upper/Lower split (bodyweight + 10 kg & 5 kg plate)
+- 4-day Upper/Lower split for fat loss (bodyweight + a single 10 kg plate)
+- Modern minimalist UI — Inter font, monochrome with a single emerald accent
 - Per-set tap-to-complete checkboxes with completion rings
-- Optional reps/kg logging per exercise
+- Optional reps/weight logging per exercise
 - Embedded YouTube/Vimeo demo videos (paste in UI or hardcode)
-- Rest timer with 60/90/120 s presets, audio beep, and vibrate
+- Rest timer with 45/60/90 s presets, audio beep, and vibrate
+- 8-week progression tips built in
 - Progress history with session log
 - All data stored in `localStorage` on the device
 
