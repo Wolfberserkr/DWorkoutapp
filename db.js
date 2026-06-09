@@ -17,12 +17,12 @@ import {
 // 4. Enable Firestore Database (Start in production mode)
 // 5. Open Firestore → Rules → paste the contents of firestore.rules → Publish
 const FIREBASE_CONFIG = {
-  apiKey:            "",
-  authDomain:        "",
-  projectId:         "",
-  storageBucket:     "",
-  messagingSenderId: "",
-  appId:             ""
+  apiKey:            "AIzaSyD3ccfsh3MQTaqR6EMN3c-EPmOijjJy6lY",
+  authDomain:        "d-workout-app-8c7ca.firebaseapp.com",
+  projectId:         "d-workout-app-8c7ca",
+  storageBucket:     "d-workout-app-8c7ca.firebasestorage.app",
+  messagingSenderId: "609823007828",
+  appId:             "1:609823007828:web:64918d7c17e7dd42af79c1"
 };
 // Must match the userId value in firestore.rules
 export const USER_ID = "a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d";
