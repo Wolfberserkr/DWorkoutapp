@@ -1,32 +1,76 @@
 # Reset — Home Training
 
-A self-contained, single-file workout tracker for a 4-day Upper/Lower home training plan. No server, no build step, no dependencies beyond Google Fonts.
+A personal workout tracker for a 4-day Upper/Lower home training plan, designed for long-term fat loss with bodyweight and one of two plates (5 kg or 10 kg — used one at a time, never combined).
+
+Buildless: vanilla HTML/CSS/JS, ES modules over `<script type="module">`. Storage is Supabase with a localStorage cache so the app works offline and syncs back when online.
 
 ## Features
 
-- 4-day Upper/Lower split for fat loss (bodyweight + a single 10 kg plate)
-- Modern minimalist UI — Inter font, monochrome with a single emerald accent
+- 4-day Upper/Lower split, **5 kg or 10 kg plate** (single plate only)
+- **Injury cues**: amber "BACK" chips on RDL / Bulgarian Split Squat / Superman; red "ELBOW" chips on Plate Curl / Front Raise / Overhead Triceps. Exercises stay in the plan — the chip is a heads-up to be careful with form, range, and load.
+- **Exercise swap**: tap ⇄ on any exercise card to pick a safer or different alternative (2–3 per exercise).
+- **Session completion screen**: stats + a direct, no-nonsense one-liner after every finished workout.
+- **Progress page** — the heart of the app:
+  - Weekly weigh-in with inline SVG trend chart
+  - Personal records (heaviest weight × reps) per exercise
+  - At-a-glance counters (total sessions, this week, active days)
+  - **Calendar view** — month grid, tap any training day to see the full session detail (every exercise, sets done, reps and weight logged)
+  - Past sessions list
+- **Daily nutrition check-in**: Great / Okay / Struggled / Skipped + optional note. Editable per day, last 7 shown below.
 - Per-set tap-to-complete checkboxes with completion rings
-- Optional reps/weight logging per exercise
-- Embedded YouTube/Vimeo demo videos (paste in UI or hardcode)
-- Rest timer with 45/60/90 s presets, audio beep, and vibrate
+- Embedded YouTube/Vimeo demo videos (hardcoded or pasted)
+- Floating rest timer (45 / 60 / 90 s) with audio + vibration
 - 8-week progression tips built in
-- Progress history with session log
-- All data stored in `localStorage` on the device
+- **Direct, no-nonsense tone** throughout
+- No jumping or high-impact exercises
+
+## File layout
+
+```
+index.html         shell only (markup + CSS link + module script)
+style.css          all styles
+data.js            PLAN, INJURY_FLAGS, SWAPS, WARMUP, COOLDOWN, WEEK_TIPS, FINISH_MSGS
+db.js              Supabase client + cache-first sync + pending-ops queue
+app.js             rendering, state, event handlers
+supabase/schema.sql  schema + RLS for the 5 tables (run once in Supabase)
+```
+
+## Supabase setup
+
+The app is designed for a single shared user with no login screen. RLS gates access to a hard-coded `USER_ID` UUID; the anon key is safe to ship.
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open the SQL editor and paste/run `supabase/schema.sql`. This creates the 5 tables (`app_state`, `sessions`, `exercise_logs`, `weights`, `nutrition`) and RLS policies, and seeds the singleton `app_state` row.
+3. **If you want a different USER_ID UUID**: pick your own UUID (e.g. via `gen_random_uuid()`), replace `a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d` in both `supabase/schema.sql` and `db.js` (the `USER_ID` constant), and rerun the SQL.
+4. In `db.js`, fill in `SUPABASE_URL` and `SUPABASE_ANON_KEY` from **Project Settings → API**.
+5. Reload the app. Writes go to Supabase; reads hit localStorage first then reconcile from the cloud.
+
+If you leave `SUPABASE_URL` empty, the app silently falls back to localStorage-only mode.
+
+## Offline behavior
+
+- Writes apply optimistically to the local cache, then push to Supabase.
+- If a push fails (offline), the op is queued in `localStorage` under `reset_pending_ops_v1` and retried on next boot and on the `online` event.
+- Reads always hit the local cache first, so the UI is instant.
 
 ## Deploy on GitHub Pages
 
-1. Push this repo to GitHub (main branch).
-2. Go to **Settings → Pages**.
-3. Under **Source**, select **Deploy from a branch**, choose `main`, folder `/` (root), and click **Save**.
-4. After ~60 seconds your site is live at `https://<username>.github.io/<repo-name>/`.
+1. Push to `main`.
+2. **Settings → Pages → Source: Deploy from a branch → main / root → Save**.
+3. Live at `https://<username>.github.io/<repo-name>/` in ~60 seconds.
+
+Supabase is reachable from any origin via the anon key.
 
 ## Adding demo videos
 
-**In the UI:** Open any session, tap "Add demo video" beneath an exercise, paste a YouTube or Vimeo URL, and press **Embed**. The link is saved to `localStorage`.
+- **In the UI**: open any session, tap "Add demo video" beneath an exercise, paste a YouTube or Vimeo URL, press Save.
+- **Hardcoded**: edit the `video` field on any exercise inside `data.js`.
 
-**Hardcoded:** In `index.html`, find the `PLAN` array near the top of the `<script>` block. Set the `video` field for any exercise to a full YouTube URL or an 11-character video ID:
+## Equipment
 
-```js
-{id:"goblet-squat", name:"Goblet Squat", ..., video:"https://youtu.be/XXXXXXXXXXX"}
-```
+- 5 kg bumper plate
+- 10 kg bumper plate
+- Sturdy chair (Bulgarian split squat, single-arm row)
+- A wall (wall sit) and a sturdy table (inverted row)
+
+Only one plate is held at a time — there are no combined-plate loads.
