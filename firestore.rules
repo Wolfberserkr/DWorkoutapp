@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Firestore security rules for Reset Workout App.
+// Single shared user. Any client that knows the USER_ID UUID can read and write
+// to that user's path. The UUID acts as a shared secret — keep it private.
+//
+// To deploy:
+//   Firebase console → Firestore → Rules → paste this → Publish
+//   OR: firebase deploy --only firestore:rules   (if using Firebase CLI)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow full read/write access to the specific hard-coded user's sub-tree.
+    // Replace the UUID below if you change USER_ID in db.js.
+    match /users/{userId}/{document=**} {
+      allow read, write: if userId == "a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d";
+    }
+
+    // Deny everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
