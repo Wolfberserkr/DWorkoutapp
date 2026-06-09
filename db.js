@@ -1,48 +1,68 @@
-// Supabase client + cache-first sync layer.
-// Single shared user (hard-coded UUID). LocalStorage is the read cache; Supabase is durable storage.
-// If the keys below aren't filled in, the app silently falls back to localStorage-only mode.
+// Firebase Firestore sync layer — drop-in replacement for the Supabase db.js.
+// Same exported API, so app.js is unchanged.
+// Single shared user: hard-coded USER_ID, no login screen.
+// Security is handled by Firestore rules (firestore.rules) which restrict all
+// reads and writes to the specific USER_ID path.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { initializeApp }      from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc,
+  collection, getDocs, query, orderBy, limit
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ─── CONFIGURE ME ────────────────────────────────────────────────────────────
-// 1. Create a Supabase project (https://supabase.com)
-// 2. Run /supabase/schema.sql in the SQL editor (replace the UUID inside it if you change USER_ID)
-// 3. Paste your project URL and anon key below
-export const SUPABASE_URL      = "";   // e.g. "https://xxxxx.supabase.co"
-export const SUPABASE_ANON_KEY = "";   // anon/public key — safe to ship, RLS gates access
-export const USER_ID           = "a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d";
+// 1. Go to https://console.firebase.google.com
+// 2. Create a project → Add a web app → copy the firebaseConfig object
+// 3. Paste it below
+// 4. Enable Firestore Database (Start in production mode)
+// 5. Open Firestore → Rules → paste the contents of firestore.rules → Publish
+const FIREBASE_CONFIG = {
+  apiKey:            "",
+  authDomain:        "",
+  projectId:         "",
+  storageBucket:     "",
+  messagingSenderId: "",
+  appId:             ""
+};
+// Must match the userId value in firestore.rules
+export const USER_ID = "a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CACHE_KEY  = "reset_state_v3";
 const QUEUE_KEY  = "reset_pending_ops_v1";
 const LEGACY_KEY = "reset_state_v2";
 
-const cloudConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const supabase = cloudConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+export const isCloudConfigured = !!(FIREBASE_CONFIG.projectId);
+
+let db = null;
+if (isCloudConfigured) {
+  try {
+    db = getFirestore(initializeApp(FIREBASE_CONFIG));
+  } catch (e) {
+    console.warn("Firebase init failed", e);
+  }
+}
+
+// Shorthand helpers for user sub-collections
+const uDoc = (...segs) => doc(db,        "users", USER_ID, ...segs);
+const uCol = (...segs) => collection(db, "users", USER_ID, ...segs);
 
 // ─── Local cache ─────────────────────────────────────────────────────────────
 const Mem = { data:{} };
 function safeGet(k){ try { return localStorage.getItem(k); } catch { return Mem.data[k]; } }
-function safeSet(k,v){ try { localStorage.setItem(k,v); } catch { Mem.data[k] = v; } }
+function safeSet(k,v){ try { localStorage.setItem(k,v); } catch { Mem.data[k]=v; } }
 
 const DEFAULT_STATE = () => ({
-  week: 1,
-  progress: {},
-  log: {},
-  videos: {},
-  swaps: {},
-  history: [],
-  weights: [],
-  nutrition: [],
-  sessions: []
+  week:1, progress:{}, log:{}, videos:{}, swaps:{},
+  history:[], weights:[], nutrition:[], sessions:[]
 });
 
 export function loadCache(){
   try {
     const v3 = JSON.parse(safeGet(CACHE_KEY));
-    if (v3 && v3.progress) return { ...DEFAULT_STATE(), ...v3 };
+    if (v3?.progress) return { ...DEFAULT_STATE(), ...v3 };
     const v2 = JSON.parse(safeGet(LEGACY_KEY));
-    if (v2 && v2.progress) return { ...DEFAULT_STATE(), ...v2 };
+    if (v2?.progress) return { ...DEFAULT_STATE(), ...v2 };
   } catch {}
   return DEFAULT_STATE();
 }
@@ -54,92 +74,92 @@ function saveQueue(q){ safeSet(QUEUE_KEY, JSON.stringify(q)); }
 function enqueue(op){ const q = loadQueue(); q.push(op); saveQueue(q); }
 
 async function runOp(op){
-  if (!supabase) throw new Error("no cloud");
-  const t = supabase.from(op.table);
-  if (op.kind === "upsert") return await t.upsert(op.row, op.opts || {});
-  if (op.kind === "insert") return await t.insert(op.row);
-  if (op.kind === "delete") return await t.delete().match(op.match);
-  throw new Error("bad op");
+  if (!db) throw new Error("no cloud");
+  if (op.kind === "setDoc") {
+    await setDoc(doc(db, ...op.path), op.data, op.merge ? { merge:true } : {});
+  } else if (op.kind === "addDoc") {
+    await addDoc(collection(db, ...op.path), op.data);
+  } else {
+    throw new Error("unknown op: " + op.kind);
+  }
 }
 
 export async function flushQueue(){
-  if (!supabase) return;
+  if (!db) return;
   const q = loadQueue();
   if (!q.length) return;
   const remaining = [];
-  for (const op of q) {
-    try { const { error } = await runOp(op); if (error) remaining.push(op); }
-    catch { remaining.push(op); }
-  }
+  for (const op of q) { try { await runOp(op); } catch { remaining.push(op); } }
   saveQueue(remaining);
 }
 
-// ─── Write helpers (optimistic; queue on failure) ────────────────────────────
 async function pushOp(op){
-  if (!supabase) return; // localStorage-only mode
-  try {
-    const { error } = await runOp(op);
-    if (error) enqueue(op);
-  } catch { enqueue(op); }
+  if (!db) return;
+  try { await runOp(op); } catch { enqueue(op); }
 }
 
+// ─── Write helpers ───────────────────────────────────────────────────────────
 export function upsertAppState(state){
   return pushOp({
-    kind:"upsert",
-    table:"app_state",
-    row:{ user_id:USER_ID, week:state.week, progress:state.progress, swaps:state.swaps, videos:state.videos, updated_at:new Date().toISOString() },
-    opts:{ onConflict:"user_id" }
+    kind:"setDoc", merge:true,
+    path:["users", USER_ID, "app_state", "singleton"],
+    data:{ week:state.week, progress:state.progress, swaps:state.swaps,
+           videos:state.videos, updated_at:new Date().toISOString() }
   });
 }
 
 export function insertSession(session){
-  return pushOp({ kind:"insert", table:"sessions", row:{ ...session, user_id:USER_ID } });
+  return pushOp({
+    kind:"addDoc",
+    path:["users", USER_ID, "sessions"],
+    data:{ ...session, user_id:USER_ID }
+  });
 }
 
 export function insertExerciseLog(row){
-  return pushOp({ kind:"insert", table:"exercise_logs", row:{ ...row, user_id:USER_ID, logged_at:new Date().toISOString() } });
+  return pushOp({
+    kind:"addDoc",
+    path:["users", USER_ID, "exercise_logs"],
+    data:{ ...row, user_id:USER_ID, logged_at:new Date().toISOString() }
+  });
 }
 
 export function upsertWeight(kg, recorded_on){
   return pushOp({
-    kind:"upsert",
-    table:"weights",
-    row:{ user_id:USER_ID, kg, recorded_on, updated_at:new Date().toISOString() },
-    opts:{ onConflict:"user_id,recorded_on" }
+    kind:"setDoc", merge:true,
+    path:["users", USER_ID, "weights", recorded_on],
+    data:{ kg, recorded_on, user_id:USER_ID, updated_at:new Date().toISOString() }
   });
 }
 
 export function upsertNutrition({ recorded_on, rating, note }){
   return pushOp({
-    kind:"upsert",
-    table:"nutrition",
-    row:{ user_id:USER_ID, recorded_on, rating, note: note || null, updated_at:new Date().toISOString() },
-    opts:{ onConflict:"user_id,recorded_on" }
+    kind:"setDoc", merge:true,
+    path:["users", USER_ID, "nutrition", recorded_on],
+    data:{ recorded_on, rating, note:note||null, user_id:USER_ID, updated_at:new Date().toISOString() }
   });
 }
 
 // ─── Cloud reads (called on boot to reconcile with cache) ────────────────────
 export async function fetchFromCloud(){
-  if (!supabase) return null;
+  if (!db) return null;
   try {
-    const [st, sess, logs, wts, nut] = await Promise.all([
-      supabase.from("app_state").select("*").eq("user_id", USER_ID).maybeSingle(),
-      supabase.from("sessions").select("*").eq("user_id", USER_ID).order("completed_at", { ascending:false }).limit(200),
-      supabase.from("exercise_logs").select("*").eq("user_id", USER_ID).order("logged_at", { ascending:false }).limit(500),
-      supabase.from("weights").select("*").eq("user_id", USER_ID).order("recorded_on", { ascending:true }).limit(200),
-      supabase.from("nutrition").select("*").eq("user_id", USER_ID).order("recorded_on", { ascending:false }).limit(60)
+    const [stSnap, sessSnap, logsSnap, wtsSnap, nutSnap] = await Promise.all([
+      getDoc(uDoc("app_state","singleton")),
+      getDocs(query(uCol("sessions"),      orderBy("completed_at","desc"), limit(200))),
+      getDocs(query(uCol("exercise_logs"), orderBy("logged_at","desc"),    limit(500))),
+      getDocs(query(uCol("weights"),       orderBy("recorded_on","asc"))),
+      getDocs(query(uCol("nutrition"),     orderBy("recorded_on","desc"),  limit(60)))
     ]);
     return {
-      appState: st.data || null,
-      sessions: sess.data || [],
-      logs: logs.data || [],
-      weights: wts.data || [],
-      nutrition: nut.data || []
+      appState:  stSnap.exists()     ? stSnap.data()                        : null,
+      sessions:  sessSnap.docs.map(d => ({ id:d.id, ...d.data() })),
+      logs:      logsSnap.docs.map(d => d.data()),
+      weights:   wtsSnap.docs.map(d  => d.data()),
+      nutrition: nutSnap.docs.map(d  => d.data())
     };
-  } catch (e) {
+  } catch(e) {
     console.warn("cloud fetch failed", e);
     return null;
   }
 }
-
-export const isCloudConfigured = cloudConfigured;

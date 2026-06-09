@@ -30,22 +30,34 @@ Buildless: vanilla HTML/CSS/JS, ES modules over `<script type="module">`. Storag
 index.html         shell only (markup + CSS link + module script)
 style.css          all styles
 data.js            PLAN, INJURY_FLAGS, SWAPS, WARMUP, COOLDOWN, WEEK_TIPS, FINISH_MSGS
-db.js              Supabase client + cache-first sync + pending-ops queue
+db.js              Firebase Firestore client + cache-first sync + pending-ops queue
 app.js             rendering, state, event handlers
-supabase/schema.sql  schema + RLS for the 5 tables (run once in Supabase)
+firestore.rules    Firestore security rules (paste into Firebase console → Firestore → Rules)
 ```
 
-## Supabase setup
+## Firebase setup
 
-The app is designed for a single shared user with no login screen. RLS gates access to a hard-coded `USER_ID` UUID; the anon key is safe to ship.
+The app uses **Firebase Firestore** for storage (free Spark plan is plenty for personal use). No login screen — a hard-coded `USER_ID` UUID controls access via Firestore rules.
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open the SQL editor and paste/run `supabase/schema.sql`. This creates the 5 tables (`app_state`, `sessions`, `exercise_logs`, `weights`, `nutrition`) and RLS policies, and seeds the singleton `app_state` row.
-3. **If you want a different USER_ID UUID**: pick your own UUID (e.g. via `gen_random_uuid()`), replace `a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d` in both `supabase/schema.sql` and `db.js` (the `USER_ID` constant), and rerun the SQL.
-4. In `db.js`, fill in `SUPABASE_URL` and `SUPABASE_ANON_KEY` from **Project Settings → API**.
-5. Reload the app. Writes go to Supabase; reads hit localStorage first then reconcile from the cloud.
+### Steps
 
-If you leave `SUPABASE_URL` empty, the app silently falls back to localStorage-only mode.
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) → **Add project** (or pick an existing one).
+2. In your project: **Build → Firestore Database → Create database** → choose a region → start in **production mode**.
+3. **Deploy the security rules**:
+   - Open **Firestore → Rules** in the console.
+   - Replace the default content with the contents of `firestore.rules` in this repo.
+   - Click **Publish**.
+4. **Get your web app config**:
+   - **Project settings** (gear icon) → **Your apps** → **Add app** → Web.
+   - Copy the `firebaseConfig` object.
+   - Paste it into `db.js` inside the `FIREBASE_CONFIG = { … }` block.
+5. Reload the app. Writes go to Firestore; reads hit localStorage first and reconcile from the cloud in the background.
+
+If you leave `FIREBASE_CONFIG.projectId` empty the app falls back to **localStorage-only** mode silently.
+
+### Changing the USER_ID
+
+If you want a different UUID, replace `a1f0c8d2-3b4e-4f5a-9c0d-1e2f3a4b5c6d` in **both** `db.js` (the `USER_ID` constant) and `firestore.rules` (the `userId ==` check), then re-publish the rules.
 
 ## Offline behavior
 
