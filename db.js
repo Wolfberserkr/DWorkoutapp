@@ -5,7 +5,7 @@
 
 // ─── CONFIGURE ME ────────────────────────────────────────────────────────────
 // Paste your Apps Script Web App URL here after deploying (see README for steps)
-const SCRIPT_URL = "";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4VYg4KGCDMFNEWJ1jK-XxXDHw0yD8HpUiZQFYv29Z9WEqo2-iWH5XtzYR7sgvy8gv8Q/exec";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CACHE_KEY  = "reset_state_v3";
