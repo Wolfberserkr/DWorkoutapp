@@ -200,6 +200,17 @@ function renderDay(dayId){
         Set ${si+1}</span>`).join("");
     const lg = state.log[slotId] || { reps:"", weight:"" };
     const vid = effectiveVideo(e);
+    const isTimed = e.reps.includes("sec");
+    const canAddWeight = !isTimed || e.id === "wall-sit"; // wall sit takes a plate on the lap
+    const logRowHtml = isTimed
+      ? `<div class="logrow">
+          <span class="field">Time <input type="text" inputmode="decimal" placeholder="sec" value="${lg.reps}" onchange="logVal('${slotId}','reps',this.value)"> <span style="font-size:11px;color:var(--ink-4);font-weight:600;text-transform:uppercase;letter-spacing:.06em">sec</span></span>
+          ${canAddWeight ? `<span class="field">Wt <input type="text" inputmode="decimal" placeholder="kg" value="${lg.weight}" onchange="logVal('${slotId}','weight',this.value)"></span>` : ""}
+        </div>`
+      : `<div class="logrow">
+          <span class="field">Reps <input type="text" inputmode="decimal" placeholder="—" value="${lg.reps}" onchange="logVal('${slotId}','reps',this.value)"></span>
+          <span class="field">Wt <input type="text" inputmode="decimal" placeholder="kg" value="${lg.weight}" onchange="logVal('${slotId}','weight',this.value)"></span>
+        </div>`;
     return `<div class="ex ${done ? "done" : ""}" id="ex-${slotId}">
       <div class="ex-head">
         <div style="flex:1;min-width:0">
@@ -218,10 +229,7 @@ function renderDay(dayId){
         </div>
       </div>
       <div class="sets">${setsHtml}</div>
-      <div class="logrow">
-        <span class="field">Reps <input type="text" inputmode="decimal" placeholder="—" value="${lg.reps}" onchange="logVal('${slotId}','reps',this.value)"></span>
-        <span class="field">Wt <input type="text" inputmode="decimal" placeholder="kg" value="${lg.weight}" onchange="logVal('${slotId}','weight',this.value)"></span>
-      </div>
+      ${logRowHtml}
       <button class="vid-toggle" onclick="toggleVid('${e.id}','${slotId}')">
         <span id="vlabel-${slotId}">${vid ? "Watch demo" : "Add demo video"}</span>
       </button>
