@@ -37,8 +37,8 @@ export const PLAN = [
     { id:"side-plank-a",  name:"Side Plank",               sets:3, reps:"30 sec / side", load:"Core",                          video:"https://youtu.be/44ND4bOB-T0" }
   ]},
   { id:"lower-b", name:"Lower B", focus:"Hinge & posterior chain", ex:[
-    { id:"rdl",           name:"Romanian Deadlift",        sets:4, reps:"12 reps",    load:"10 kg · slow lower",                 video:"https://youtu.be/aa57T45iFSE" },
-    { id:"bulgarian",     name:"Bulgarian Split Squat",    sets:3, reps:"10 / leg",   load:"Rear foot on chair, hold 5 or 10 kg",video:"https://youtu.be/hiLF_pF3EJM" },
+    { id:"rdl",           name:"Romanian Deadlift",        sets:4, reps:"12 reps",    load:"10 kg · slow lower",                    video:"https://youtu.be/aa57T45iFSE" },
+    { id:"split-squat",   name:"Split Squat",              sets:3, reps:"10 / leg",   load:"Hold 5 or 10 kg at chest · deep stance, both feet flat", video:"https://youtu.be/hiLF_pF3EJM" },
     { id:"sl-bridge",     name:"Single-leg Glute Bridge",  sets:3, reps:"12 / leg",   load:"Bodyweight · squeeze top",           video:"https://youtu.be/HkF61M6StlY" },
     { id:"sumo-dl",       name:"Sumo Deadlift",            sets:3, reps:"12 reps",    load:"10 kg between feet",                 video:"https://youtu.be/xgb_WrJ_xtw" },
     { id:"curtsy",        name:"Curtsy Lunge",             sets:3, reps:"10 / leg",   load:"Hold 5 or 10 kg at chest",           video:"https://youtu.be/g8mCJDtD2DQ" },
@@ -46,8 +46,8 @@ export const PLAN = [
     { id:"bird-dog",      name:"Bird Dog",                 sets:3, reps:"10 / side",  load:"Core · pause each rep",              video:"https://youtu.be/ZdAHe9_HeEw" }
   ]},
   { id:"upper-b", name:"Upper B", focus:"Pull & arms", ex:[
-    { id:"inv-row",       name:"Inverted Row",             sets:4, reps:"8–12 reps",  load:"Under a sturdy table",               video:"https://youtu.be/6NTruShwwKk" },
-    { id:"sa-row",        name:"Single-arm Bent-over Row", sets:4, reps:"10 / arm",   load:"10 kg · brace on chair",             video:"https://youtu.be/pYcpY20QaE8" },
+    { id:"bent-row",      name:"Bent-over Plate Row",      sets:4, reps:"10–12 reps", load:"10 kg · hinge 45°, row plate to chest", video:"https://youtu.be/pYcpY20QaE8" },
+    { id:"sa-row",        name:"Single-arm Bent-over Row", sets:4, reps:"10 / arm",   load:"10 kg · free hand on thigh, hinge and row", video:"https://youtu.be/pYcpY20QaE8" },
     { id:"pullover",      name:"Plate Pullover",           sets:3, reps:"12 reps",    load:"10 kg, lying on floor",              video:"https://youtu.be/Qc4L9I3pHnw" },
     { id:"plate-curl",    name:"Plate Curl",               sets:3, reps:"12 reps",    load:"5 kg · both hands, neutral grip",    video:"https://youtu.be/MtXdEcW3Eog" },
     { id:"russian-twist", name:"Plate Russian Twist",      sets:3, reps:"20 total",   load:"5 or 10 kg · feet off floor to progress", video:"https://youtu.be/Yg47UxxV9Vc" },
@@ -67,7 +67,6 @@ export function tipForWeek(w){ let key=1; [1,3,5,7].forEach(k=>{ if(w>=k) key=k;
 // Exercises that need a caution chip. She still does them — the cue is informational.
 export const INJURY_FLAGS = {
   "rdl":         { type:"back",  warn:"Hinge with a neutral spine only. If you feel it in your lumbar, drop to the 5 kg plate or swap today." },
-  "bulgarian":   { type:"back",  warn:"High lumbar demand with knee tracking. Sub out on bad-back days." },
   "superman":    { type:"back",  warn:"Spinal extension under load. Shorten the range or skip if your lower back is tender." },
   "plate-curl":  { type:"elbow", warn:"Curl grip stresses the lateral elbow. Use a neutral grip and the 5 kg plate. Stop if the elbow pinches." },
   "front-raise": { type:"elbow", warn:"Repetitive elbow flexion under load. Reduce reps or swap if your elbow flares up." },
@@ -91,16 +90,16 @@ export const SWAPS = {
   "oh-tri":        ["pushup","pike","side-plank-a"],
   "side-plank-a":  ["plank-a","dead-bug","hollow"],
   "rdl":           ["sumo-dl","sl-bridge","curtsy"],
-  "bulgarian":     ["reverse-lunge","curtsy","lateral-lunge"],
+  "split-squat":   ["reverse-lunge","curtsy","lateral-lunge"],
   "sl-bridge":     ["hip-thrust","bird-dog","dead-bug"],
   "sumo-dl":       ["rdl","goblet-squat","lateral-lunge"],
-  "curtsy":        ["reverse-lunge","lateral-lunge","bulgarian"],
+  "curtsy":        ["reverse-lunge","lateral-lunge","split-squat"],
   "hollow":        ["plank-a","dead-bug","bird-dog"],
   "bird-dog":      ["dead-bug","hollow","plank-a"],
-  "inv-row":       ["sa-row","pullover","plate-curl"],
-  "sa-row":        ["inv-row","pullover","plate-curl"],
-  "pullover":      ["sa-row","inv-row","oh-tri"],
-  "plate-curl":    ["inv-row","sa-row","pullover"],
+  "bent-row":      ["sa-row","pullover","plate-curl"],
+  "sa-row":        ["bent-row","pullover","plate-curl"],
+  "pullover":      ["sa-row","bent-row","oh-tri"],
+  "plate-curl":    ["bent-row","sa-row","pullover"],
   "russian-twist": ["hollow","plank-a","dead-bug"],
   "reverse-plank": ["plank-a","side-plank-a","hollow"],
   "superman":      ["bird-dog","dead-bug","reverse-plank"]

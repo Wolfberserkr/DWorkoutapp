@@ -176,7 +176,13 @@ function renderDay(dayId){
   const exHtml = d.ex.map(origEx => {
     const e = resolvedExercise(dayId, origEx.id);     // swapped exercise if active
     const slotId = origEx.id;                          // set-tracking key stays original
-    const a = state.progress[dayId][slotId];
+    let a = state.progress[dayId][slotId];
+    // Keep checkbox count in sync with the displayed exercise's set count (handles swaps)
+    if (a.length !== e.sets) {
+      a = [...a.slice(0, e.sets), ...new Array(Math.max(0, e.sets - a.length)).fill(false)];
+      state.progress[dayId][slotId] = a;
+      persistLocal();
+    }
     const done = a.every(Boolean);
     const swapped = e.id !== slotId;
     const flag = INJURY_FLAGS[e.id];
